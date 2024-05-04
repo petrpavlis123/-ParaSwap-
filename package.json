@@ -1,0 +1,39 @@
+{
+  "name": "ParaSwap",
+  "version": "0.0.1",
+  "description": " ",
+  "main": "./lib/index.js",
+  "module": "./lib/index.js",
+  "types": "./lib/types/index.d.ts",
+  "scripts": {
+    "build": "webpack --config webpack.config.js && tsc"
+  },
+  "dependencies": {
+    "@babel/core": "^7.23.7",
+    "@babel/plugin-proposal-export-default-from": "^7.23.3",
+    "@babel/preset-env": "^7.23.6",
+    "@babel/preset-typescript": "^7.23.3",
+    "@polkadot/api": "^10.11.2",
+    "@polkadot/extension-inject": "^0.46.6",
+    "@substrate/connect": "^0.7.34",
+    "babel-loader": "^9.1.3",
+    "copy-webpack-plugin": "^11.0.0",
+    "qr-image": "^3.2.0",
+    "qrcode": "^1.5.3",
+    "react": "^18.2.0",
+    "socket.io": "^4.7.2",
+    "socket.io-client": "^4.7.2",
+    "tsify": "^5.0.4",
+    "webpack": "^5.89.0"
+  },
+  "keywords": [],
+  "author": "Petr Pavliš, Petr Kruliš, Rostislav Litovkin",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/qrcode": "^1.5.5",
+    "html-webpack-plugin": "^5.6.0",
+    "typescript": "^5.3.3",
+    "webpack-cli": "^5.1.4",
+    "webpack-dev-server": "^4.15.1"
+  }
+}

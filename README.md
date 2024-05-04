@@ -1,1 +1,1 @@
-# -ParaSwap-
+# ParaSwap

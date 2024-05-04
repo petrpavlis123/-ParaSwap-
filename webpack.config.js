@@ -5,8 +5,8 @@ module.exports = {
   entry: './index.ts',
   output: {
     path: path.resolve(__dirname, 'lib'),
-    filename: 'plutonication.js',
-    library: 'Plutonication',
+    filename: 'paraswap.js',
+    library: 'ParachainSwap',
     libraryTarget: 'umd',
     globalObject: 'this'
   },

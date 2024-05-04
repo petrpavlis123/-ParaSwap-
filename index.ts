@@ -1,1 +1,1 @@
-export { bridgeAndSwap } from "./src/bridgeAndSwap"
+export { bridgeAndSwapAsync } from "./src/bridgeAndSwap"

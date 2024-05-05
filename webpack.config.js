@@ -10,6 +10,9 @@ module.exports = {
     libraryTarget: 'umd',
     globalObject: 'this'
   },
+  experiments: {
+    asyncWebAssembly: true
+  },
   resolve: {
     extensions: [".ts", ".js"],
   },

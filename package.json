@@ -1,7 +1,7 @@
 {
   "name": "parachainswap",
-  "version": "0.0.3",
-  "description": " ",
+  "version": "0.1.0",
+  "description": "Bridge and Swap currencies across multiple parachains in just 1 function call. Easily integrate this package into your project in just 2 lines of code.",
   "main": "./lib/index.js",
   "module": "./lib/index.js",
   "types": "./lib/types/index.d.ts",

@@ -1,4 +1,4 @@
-import { ApiPromise, WsProvider } from "@polkadot/api";
+import { ApiPromise } from "@polkadot/api";
 import { decodeAddress } from '@polkadot/util-crypto'
 
 export async function bridgeDotFromHydraDXToPolkadot(hydraApi: ApiPromise, account, amount) {

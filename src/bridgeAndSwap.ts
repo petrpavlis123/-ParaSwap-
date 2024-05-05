@@ -12,9 +12,9 @@ export interface SwapTx {
 }
 
 export async function bridgeAndSwapAsync(account, amountOut): Promise<SwapTx> {
-    const polkadotApi = await ApiPromise.create({ provider: new WsProvider('ws://127.0.0.1:8002') });
-    const hydraApi = await ApiPromise.create({ provider: new WsProvider('ws://127.0.0.1:8000') });
-    const assetHubApi = await ApiPromise.create({ provider: new WsProvider('ws://127.0.0.1:8001') });
+    const polkadotApi = await ApiPromise.create({ provider: new WsProvider('wss://polkadot-rpc.dwellir.com') });
+    const hydraApi = await ApiPromise.create({ provider: new WsProvider('wss://hydradx-rpc.dwellir.com') });
+    const assetHubApi = await ApiPromise.create({ provider: new WsProvider('wss://statemint-rpc.dwellir.com') });
 
     /// Bridge DOT z Polkadot -> AssetHub
     const polkadotAmountOut = await checkNative(assetHubApi, account) ?

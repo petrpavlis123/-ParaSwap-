@@ -3,6 +3,8 @@ import { cryptoWaitReady } from '@polkadot/util-crypto'
 import { ApiPromise, Keyring, WsProvider } from '@polkadot/api';
 import { bridgeDotFromHydraDXToPolkadot } from "../../src/bridge"
 import '@polkadot/api-augment'
+import { swapUSDTForDot } from '../../src/swap';
+import { BigNumber, Trade } from '@galacticcouncil/sdk';
 
 /// Helper method that returns the Alice account
 async function getAlice() {
@@ -17,19 +19,38 @@ async function getAlice() {
     return alice
 }
 
-
-test('bridge 1', async () => {
+test('swap', async () => {
     const alice = await getAlice()
 
-    const hydraApi = await ApiPromise.create({ provider: new WsProvider('ws://127.0.0.1:8000') });
+    const trade: Trade = await swapUSDTForDot(1) // 1 DOT
 
-    const tx = await bridgeDotFromHydraDXToPolkadot(hydraApi, alice, 1000000)
+    console.log(trade);
+
+    const x = trade.toTx(new BigNumber(100_000_000_000));
+
+    console.log(x.hex);
+
+    const tx = x.get()
 
     const paymentInfo = await tx.paymentInfo(alice)
     console.log(paymentInfo.weight.refTime.toString());
     console.log(paymentInfo.weight.proofSize.toString())
 
     await tx.signAndSend(alice);
+
+    await new Promise(resolve => {
+        setTimeout(resolve, 5000);
+    });
+
+    const hydraApi = await ApiPromise.create({ provider: new WsProvider('ws://127.0.0.1:8000') });
+
+    const dotBalance = await hydraApi.query.tokens.accounts(alice.address, 5)
+
+    console.log("DOT Free: " + dotBalance.free);
+    
+    const usdtBalance = await hydraApi.query.tokens.accounts(alice.address, 10)
+
+    console.log("USDT Free: " + usdtBalance.free);
 })
 
 test('check dot balance on Hydra', async () => {
@@ -39,15 +60,15 @@ test('check dot balance on Hydra', async () => {
     
     const balance = await hydraApi.query.tokens.accounts(alice.address, 5)
 
-    console.log("Free: " + balance.free);
+    console.log("DOT Free: " + balance.free);
 })
 
-test('check dot balance on Polkadot', async () => {
+test('check usdt balance on Hydra', async () => {
     const alice = await getAlice()
 
-    const polkadotApi = await ApiPromise.create({ provider: new WsProvider('ws://127.0.0.1:8002') });
+    const hydraApi = await ApiPromise.create({ provider: new WsProvider('ws://127.0.0.1:8000') });
     
-    const balance = await polkadotApi.query.system.account(alice.address)
+    const usdtBalance = await hydraApi.query.tokens.accounts(alice.address, 10)
 
-    console.log("Free: " + balance.data.free);
+    console.log("USDT Free: " + usdtBalance.free);
 })

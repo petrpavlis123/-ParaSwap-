@@ -16,14 +16,35 @@ async function getAlice() {
   return alice
 }
 
-test('', async ({ page }) => {
+/// Helper method that returns the Alice account
+async function getOtherAccount() {
+  await cryptoWaitReady()
+
+  // Create an instance of the Keyring
+  const keyring = new Keyring({ type: 'sr25519' })
+
+  // Create pair and add Alice to keyring pair dictionary (with account seed)
+  const other = keyring.addFromUri('//Other')
+
+  return other
+}
+
+test('Alice pays', async ({ page }) => {
 
   const alice = await getAlice()
 
-  const result = await bridgeAndSwapAsync(alice)
+  const result = await bridgeAndSwapAsync(alice, 10_000_000_000)
 
-  console.log(result.fees.valueOf())
-  expect(result.fees.valueOf() === "0").toBeFalsy()
+  console.log("Alice pays: " + result.amountIn)
+});
+
+test('Other pays', async ({ page }) => {
+
+  const other = await getOtherAccount()
+
+  const result = await bridgeAndSwapAsync(other, 10_000_000_000)
+
+  console.log("Other accounts pay: " + result.amountIn)
 });
 
 

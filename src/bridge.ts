@@ -1,9 +1,7 @@
 import { ApiPromise, WsProvider } from "@polkadot/api";
 import { decodeAddress } from '@polkadot/util-crypto'
 
-export async function bridgeDotFromHydraDXToPolkadot(account, amount) {
-    const hydraApi = await ApiPromise.create({ provider: new WsProvider('ws://127.0.0.1:8000') });
-
+export async function bridgeDotFromHydraDXToPolkadot(hydraApi: ApiPromise, account, amount) {
     const dest = {
         V3: {
             parents: 1,
@@ -30,9 +28,7 @@ export async function bridgeDotFromHydraDXToPolkadot(account, amount) {
     return tx
 }
 
-export async function bridgeDotFromPolkadotToAssetHub(account, amount) {
-    const polkadotApi = await ApiPromise.create({ provider: new WsProvider('ws://127.0.0.1:8002') });
-
+export async function bridgeDotFromPolkadotToAssetHub(polkadotApi: ApiPromise, account, amount) {
     const dest = {
         V3: {
             parents: 0,
@@ -87,9 +83,7 @@ export async function bridgeDotFromPolkadotToAssetHub(account, amount) {
     return tx
 }
 
-export async function bridgeUsdtFromAssetHubToHydraDX(account, amount) {
-    const assetHubApi = await ApiPromise.create({ provider: new WsProvider('ws://127.0.0.1:8001') });
-
+export async function bridgeUsdtFromAssetHubToHydraDX(assetHubApi: ApiPromise, account, amount) {
     const dest = {
         V3: {
             interior: {

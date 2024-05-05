@@ -8,7 +8,6 @@
   "scripts": {
     "build": "webpack --config webpack.config.js && tsc",
     "tsbuild": "tsc"
-
   },
   "dependencies": {
     "@babel/core": "^7.23.7",

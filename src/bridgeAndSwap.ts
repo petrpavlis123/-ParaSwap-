@@ -1,85 +1,63 @@
-import { BigNumber, PoolService, TradeRouter } from "@galacticcouncil/sdk";
+import { BigNumber } from "@galacticcouncil/sdk";
 import { ApiPromise, WsProvider } from "@polkadot/api";
-import { bridgeDotFromHydraDXToPolkadot, bridgeDotFromPolkadotToAssetHub } from "./bridge"
-import { BN } from '@polkadot/util';
+import { bridgeDotFromHydraDXToPolkadot, bridgeDotFromPolkadotToAssetHub, bridgeUsdtFromAssetHubToHydraDX } from "./bridge"
+import { swapUSDTForDot } from "./swap";
+import { SubmittableExtrinsic } from "@polkadot/api/types";
+import { ASSET_HUB_DOT_EXISTENTIAL_DEPOSIT, DOT_ASSET_HUB_RECEIVE_FEE, DOT_HYDRA_SEND_FEE, DOT_POLKADOT_RECEIVE_FEE, DOT_POLKADOT_SEND_FEE, HYDRA_DOT_EXISTENTIAL_DEPOSIT, HYDRA_SWAP_TX_FEE, HYDRA_USDT_EXISTENTIAL_DEPOSIT, POLKADOT_DOT_EXISTENTIAL_DEPOSIT, USDT_HYDRA_RECEIVE_FEE } from "./constants";
+import { checkNative, checkTokens } from "./existentialDepositChecks";
 
 export interface SwapTx {
-    fees: BN,
-    transactions: TX[],
-}
-
-export enum Chains {
-    AssetHub,
-    Polkadot,
-    HydraDX,
-}
-
-export interface TX {
-    origin: Chains
-    destination?: Chains
-    hex: string
+    amountIn: number,
+    transactions: SubmittableExtrinsic<"promise">[],
 }
 
 export async function bridgeAndSwapAsync(account, amountOut): Promise<SwapTx> {
-    let transactions: TX[] = []
-    let fees: BN = new BN(0);
+    const polkadotApi = await ApiPromise.create({ provider: new WsProvider('ws://127.0.0.1:8002') });
+    const hydraApi = await ApiPromise.create({ provider: new WsProvider('ws://127.0.0.1:8000') });
+    const assetHubApi = await ApiPromise.create({ provider: new WsProvider('ws://127.0.0.1:8001') });
 
     /// Bridge DOT z Polkadot -> AssetHub
-    const POLKADOT_FEE = 10000000000
-    const bridge3Tx = await bridgeDotFromPolkadotToAssetHub(account, amountOut + POLKADOT_FEE);
+    const polkadotAmountOut = await checkNative(assetHubApi, account) ?
+        amountOut + DOT_ASSET_HUB_RECEIVE_FEE :
+        amountOut + DOT_ASSET_HUB_RECEIVE_FEE + ASSET_HUB_DOT_EXISTENTIAL_DEPOSIT;
 
-    transactions.push({
-        origin: Chains.HydraDX,
-        destination: Chains.Polkadot,
-        hex: bridge3Tx.toHex(),
-    })
-
-    fees = fees.add(new BN(POLKADOT_FEE))
+    const bridge3Tx = await bridgeDotFromPolkadotToAssetHub(polkadotApi, account, polkadotAmountOut);
 
     /// Bridge DOT z HydraDX -> Polkadot
-    const bridge2Tx = await bridgeDotFromHydraDXToPolkadot(account, 1000000000);
+    const hydraAmountOut = await checkNative(polkadotApi, account) ?
+        polkadotAmountOut + DOT_POLKADOT_SEND_FEE + DOT_POLKADOT_RECEIVE_FEE :
+        polkadotAmountOut + DOT_POLKADOT_SEND_FEE + DOT_POLKADOT_RECEIVE_FEE + POLKADOT_DOT_EXISTENTIAL_DEPOSIT
 
-    transactions.push({
-        origin: Chains.HydraDX,
-        destination: Chains.Polkadot,
-        hex: bridge2Tx.toHex(),
-    })
-
-    const paymentInfo2 = await bridge2Tx.paymentInfo(account)
-
-    fees = fees.add(paymentInfo2.weight.refTime.toBn())
+    const bridge2Tx = await bridgeDotFromHydraDXToPolkadot(hydraApi, account, hydraAmountOut);
 
     /// Swap USDT -> DOT
-    const api = await ApiPromise.create({ provider: new WsProvider('ws://127.0.0.1:8000') });
-    const poolService = new PoolService(api);
-    await poolService.syncRegistry(); // Wait until pools initialized (optional), fallback to lazy init
+    const swapAmountOut = await checkTokens(hydraApi, account, 5) ?
+        hydraAmountOut + DOT_HYDRA_SEND_FEE :
+        hydraAmountOut + DOT_HYDRA_SEND_FEE + HYDRA_DOT_EXISTENTIAL_DEPOSIT
 
-    const tradeRouter = new TradeRouter(poolService)
+    const swap = await swapUSDTForDot(swapAmountOut / 10_000_000_000)
 
-    const swap = await tradeRouter.getBestBuy('10', '5', 1)
+    //const swapFee = swap.tradeFee.toNumber()
 
-    fees = fees.add(new BN(swap.tradeFee.toNumber()))
+    const swapAmountIn = swap.amountIn.toNumber()
 
-    transactions.push({
-        origin: Chains.HydraDX,
-        hex: swap.toTx(new BigNumber(1000000000000000000)).hex
-    })
+    const swapTx = swap.toTx(new BigNumber(1000000000000000000)).get<typeof bridge2Tx>()
 
     /// Bridge USDT z AssetHub -> HydraDX
-    const bridge1Tx = await bridgeDotFromPolkadotToAssetHub(account, 1000000000);
+    const assetHubAmountOut = await checkTokens(hydraApi, account, 10) ?
+        swapAmountIn + USDT_HYDRA_RECEIVE_FEE + HYDRA_SWAP_TX_FEE :
+        swapAmountIn + USDT_HYDRA_RECEIVE_FEE + HYDRA_SWAP_TX_FEE + HYDRA_USDT_EXISTENTIAL_DEPOSIT
 
-    transactions.push({
-        origin: Chains.HydraDX,
-        destination: Chains.Polkadot,
-        hex: bridge1Tx.toHex(),
-    })
+    const bridge1Tx = await bridgeUsdtFromAssetHubToHydraDX(assetHubApi, account, assetHubAmountOut);
 
-    const paymentInfo1 = await bridge1Tx.paymentInfo(account)
-
-    fees = fees.add(paymentInfo1.weight.refTime.toBn())
-
+    // Return SwapTx
     return {
-        fees,
-        transactions,
+        amountIn: assetHubAmountOut,
+        transactions: [
+            bridge1Tx,
+            swapTx,
+            bridge2Tx,
+            bridge3Tx,
+        ]
     }
 }

@@ -1,0 +1,32 @@
+# Config files
+.gitignore
+.editorconfig
+.eslintignore
+.eslintrc
+.eslintrc.cjs
+.prettierignore
+.prettierrc
+babel.config.js
+tsconfig.json
+webpack.config.js
+
+# Tests files
+__tests__
+test/
+tests/
+*.test.js
+*.spec.js
+coverage/
+
+# Others
+node_modules/
+src/components/PlutonicationModal.ts
+src/AccessCredentials.ts
+src/PlutonicationDAppClient.ts
+src/PlutonicationWalletClient.ts
+example_dapp/
+.github/
+index.ts
+*.log
+*.md
+*.bak
